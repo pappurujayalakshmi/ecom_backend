@@ -53,14 +53,16 @@ let getprodbyid=async(req,res)=>{
     res.status(500).json({"err":"error in getting product by id"})
   }
 }
-let getprodbycat=async(req,res)=>{
+let getprodbycat = async (req,res)=>{
   try{
-    let prods=await pm.find({"cat":req.params.cat})
+    let prods = await pm.find({
+      cat: { $regex: new RegExp("^" + req.params.cat + "$","i") }
+    })
     res.status(200).json(prods)
-  } 
+  }
   catch(err){
     res.status(500).json({"err":"error in getting product by category"})
-  } 
+  }
 }
 let searchprod = async (req, res) => {
   let key = req.params.title;
