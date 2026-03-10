@@ -38,15 +38,14 @@ let getprods=async(req,res)=>{
 }
 let getprodbyid=async(req,res)=>{
   try{
-    let prod=await pm.findById(req.params.id)
-    let data=await pm.aggregate([
-      {$match:{"_id":req.params.id}},
-      {$unwind:"$comm"},  
-      {$group:{
-        "_id":"$_id",
-        "avgrt":{$avg:"$comm.rt"}
-      }}
-    ])
+ let data = await pm.aggregate([
+ { $match:{ "_id":req.params.id } },
+ { $unwind:{ path:"$comm", preserveNullAndEmptyArrays:true } },
+ { $group:{
+    "_id":"$_id",
+    "avgrt":{ $avg:"$comm.rt" }
+ }}
+])
     res.status(200).json({...prod._doc,"avgrt":data.length>0?data[0].avgrt:0})
   } 
   catch(err){
@@ -78,7 +77,7 @@ let searchprod = async (req, res) => {
 };
 let updateprod=async(req,res)=>{
   try{
-    await pm.findByIdAndUpdate({"_id":req.body._id},req.body)  
+await pm.findByIdAndUpdate(req.body._id, req.body)  
     res.status(200).json({"msg":"Product detailes Updated"})
   }
   catch(err){
@@ -96,10 +95,17 @@ let updateprodimg=async(req,res)=>{
     res.status(500).json({"err":"error in updating product image"})
   }
 }
-let deleteprod=async(req,res)=>{
+let deleteprod = async(req,res)=>{
   try{
-    let data=await pm.findByIdAndDelete({"_id":req.params.id})  
-    fs.rm(`./prodimgs/${data.img}`,()=>{})
+    let data = await pm.findByIdAndDelete({"_id":req.params.id})
+
+    if(data && data.img){
+      let path = `./prodimgs/${data.img}`
+      if(fs.existsSync(path)){
+        fs.rmSync(path)
+      }
+    }
+
     res.status(200).json({"msg":"Product Deleted"})
   }
   catch(err){
